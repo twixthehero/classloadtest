@@ -1,0 +1,9 @@
+modLoader="javafml"
+loaderVersion="[31,)"
+
+[[mods]]
+modId="kryclassloadtest"
+version="${file.jarVersion}"
+displayName="Krythera Classload Test"
+authors="twixthehero"
+description="Krythera Classload Test Mod"

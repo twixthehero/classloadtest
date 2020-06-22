@@ -1,0 +1,185 @@
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        google()
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
+}
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
+    id 'idea'
+    id 'java'
+    id 'maven-publish'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.72'
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+
+repositories {
+    maven { url = 'https://files.minecraftforge.net/maven' }
+    google()
+    jcenter()
+    mavenCentral()
+}
+
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+
+version = '0.0.1'
+group = 'com.krythera.classloadtest'
+archivesBaseName = 'classloadtest-1.15.2'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+minecraft {
+    // See http://export.mcpbot.bspk.rs/ for versions.
+    mappings channel: 'snapshot', version: '20200608-1.15.1'
+
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                kryaudit {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                kryaudit {
+                    source sourceSets.main
+                }
+            }
+
+            args 'nogui'
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'kryaudit', '--all', '--output', file('src/generated/resources/')
+
+            mods {
+                kryaudit {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+configurations {
+    shadow
+    compile.extendsFrom shadow
+}
+
+def kotlinVersion = plugins.findPlugin('org.jetbrains.kotlin.jvm').kotlinPluginVersion
+def exposedVersion = '0.25.1'
+
+dependencies {
+    shadow "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
+
+    shadow 'com.h2database:h2:1.4.200'
+    shadow "org.jetbrains.exposed:exposed-core:${exposedVersion}"
+    shadow "org.jetbrains.exposed:exposed-dao:${exposedVersion}"
+    shadow "org.jetbrains.exposed:exposed-jdbc:${exposedVersion}"
+    shadow "org.jetbrains.exposed:exposed-java-time:${exposedVersion}"
+
+    minecraft 'net.minecraftforge:forge:1.15.2-31.2.9'
+}
+
+// Example for how to get properties into the manifest for reading by the runtime..
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'     : 'Krythera Classload Test',
+                'Specification-Vendor'    : 'krythera',
+                'Specification-Version'   : '1', // We are version 1 of ourselves
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.version,
+                'Implementation-Vendor'   : 'krythera',
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+
+//    configurations.shadow.each { dep ->
+//        from(project.zipTree(dep)) {
+//            exclude 'META-INF', 'META-INF/**'
+//        }
+//    }
+}
+
+shadowJar {
+    classifier = 'shadow'
+
+//    dependencies {
+//        include(dependency('com.h2database:h2'))
+//        include(dependency("org.jetbrains.kotlin::${kotlinVersion}"))
+//        include(dependency("org.jetbrains.exposed::${exposedVersion}"))
+//    }
+
+    project.configurations.shadow.setTransitive(true)
+    configurations = [project.configurations.shadow]
+    relocate 'kotlin', 'com.krythera.shadow.kotlin'
+    relocate 'kotlinx', 'com.krythera.shadow.kotlinx'
+    relocate 'org.h2', 'com.krythera.shadow.org.h2'
+    relocate 'org.intellij', 'com.krythera.shadow.org.intellij'
+    relocate 'org.jetbrains', 'com.krythera.shadow.org.jetbrains'
+    relocate 'org.slf4j', 'com.krythera.shadow.org.slf4j'
+}
+
+reobf {
+    shadowJar {}
+}
+
+// Example configuration to allow publishing using the maven-publish task
+// This is the preferred method to reobfuscate your jar file
+jar.finalizedBy('reobfJar')
+// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
+//publish.dependsOn('reobfJar')
+
+artifacts {
+    archives shadowJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/mcmodsrepo"
+        }
+    }
+}

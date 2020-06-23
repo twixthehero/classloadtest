@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
+
 buildscript {
     repositories {
         maven { url = 'https://files.minecraftforge.net/maven' }
@@ -100,19 +102,29 @@ minecraft {
 configurations {
     shadow
     compile.extendsFrom shadow
+
+    ham
+    api.extendsFrom ham
 }
 
 def kotlinVersion = plugins.findPlugin('org.jetbrains.kotlin.jvm').kotlinPluginVersion
 def exposedVersion = '0.25.1'
 
 dependencies {
-    shadow "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
+    ham "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
 
-    shadow 'com.h2database:h2:1.4.200'
-    shadow "org.jetbrains.exposed:exposed-core:${exposedVersion}"
-    shadow "org.jetbrains.exposed:exposed-dao:${exposedVersion}"
-    shadow "org.jetbrains.exposed:exposed-jdbc:${exposedVersion}"
-    shadow "org.jetbrains.exposed:exposed-java-time:${exposedVersion}"
+    ham 'com.h2database:h2:1.4.200'
+    ham "org.jetbrains.exposed:exposed-core:${exposedVersion}"
+    ham "org.jetbrains.exposed:exposed-dao:${exposedVersion}"
+    ham "org.jetbrains.exposed:exposed-jdbc:${exposedVersion}"
+    ham "org.jetbrains.exposed:exposed-java-time:${exposedVersion}"
+//    shadow "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
+//
+//    shadow 'com.h2database:h2:1.4.200'
+//    shadow "org.jetbrains.exposed:exposed-core:${exposedVersion}"
+//    shadow "org.jetbrains.exposed:exposed-dao:${exposedVersion}"
+//    shadow "org.jetbrains.exposed:exposed-jdbc:${exposedVersion}"
+//    shadow "org.jetbrains.exposed:exposed-java-time:${exposedVersion}"
 
     minecraft 'net.minecraftforge:forge:1.15.2-31.2.9'
 }
@@ -139,7 +151,7 @@ jar {
 }
 
 shadowJar {
-    classifier = 'shadow'
+//    classifier = 'shadow'
 
 //    dependencies {
 //        include(dependency('com.h2database:h2'))
@@ -147,23 +159,26 @@ shadowJar {
 //        include(dependency("org.jetbrains.exposed::${exposedVersion}"))
 //    }
 
-    project.configurations.shadow.setTransitive(true)
-    configurations = [project.configurations.shadow]
-    relocate 'kotlin', 'com.krythera.shadow.kotlin'
-    relocate 'kotlinx', 'com.krythera.shadow.kotlinx'
-    relocate 'org.h2', 'com.krythera.shadow.org.h2'
-    relocate 'org.intellij', 'com.krythera.shadow.org.intellij'
-    relocate 'org.jetbrains', 'com.krythera.shadow.org.jetbrains'
-    relocate 'org.slf4j', 'com.krythera.shadow.org.slf4j'
+    project.configurations.ham.setTransitive(true)
+    configurations = [project.configurations.ham]
+//    relocate 'kotlin', 'com.krythera.shadow.kotlin'
+//    relocate 'kotlinx', 'com.krythera.shadow.kotlinx'
+//    relocate 'org.h2', 'com.krythera.shadow.org.h2'
+//    relocate 'org.intellij', 'com.krythera.shadow.org.intellij'
+//    relocate 'org.jetbrains', 'com.krythera.shadow.org.jetbrains'
+//    relocate 'org.slf4j', 'com.krythera.shadow.org.slf4j'
 }
 
 reobf {
     shadowJar {}
 }
 
+jar.finalizedBy('shadowJar', 'reobfJar')
+//jar.dependsOn('shadowJar')
+
 // Example configuration to allow publishing using the maven-publish task
 // This is the preferred method to reobfuscate your jar file
-jar.finalizedBy('reobfJar')
+//jar.finalizedBy('reobfJar')
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
 //publish.dependsOn('reobfJar')
 
